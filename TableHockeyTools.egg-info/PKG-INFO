@@ -1,3 +1,22 @@
+Metadata-Version: 2.1
+Name: TableHockeyTools
+Version: 0.1.0
+Summary: A collection of tools for working with TableHockey data.
+Home-page: https://github.com/Benginy-lab/TableHockeyTools.git
+Author: Benjamin Nygard
+Author-email: Benjamin.nygard13@gmail.com
+License: MIT
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: beautifulsoup4
+Requires-Dist: require
+
 # TableHockeyTools
 ### this package is in early development and is lacking in functionality
 **TableHockeyTools** is a Python package designed to gather data related to Table Hockey. TableHockeyTools provides convenient functions to make working with Table Hockey data straightforward.
