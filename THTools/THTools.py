@@ -52,5 +52,5 @@ def GetPlayerID(player_name):
             if full_name.lower() == player_name.lower():
                 return player_id 
 
-    print(f"WARN:could not find a {player_name}, check for spelling mistakes. Remember to write last name first then first name.")
+    print(f"WARN:could not find a {player_name}, check for spelling mistakes.")
 
