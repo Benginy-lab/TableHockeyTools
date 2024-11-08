@@ -9,7 +9,13 @@
 
 ## Installation
 
-Clone this repository and install using `pip`:
+this project is available on pypi, it is recommended that you use pip to install TableHockeyTools:
+
+```bash
+pip install TableHockeyTools
+```
+
+Alternativeley, you can clone this repository and install using `pip`:
 
 ```bash
 git clone https://github.com/Benginy-lab/TableHockeyTools.git
@@ -17,15 +23,11 @@ cd TableHockeyTools
 pip install .
 ```
 
-Alternatively, you can add the package to your project by installing directly from GitHub:
 
-```bash
-pip install git+https://github.com/Benginy-lab/TableHockeyTools.git
-```
 
 ## Usage
 
-Import the package and use the functions as needed:
+Import the package `THTools` and use the functions as needed:
 
 ```python
 import THTools as tht
@@ -57,7 +59,7 @@ Each function documented in `THTools.py` and `examples/`.
 
 ## Development
 
-Feel free to contribute! To install the package in development mode:
+Feel free to contribute! To install the package in development mode just add -e:
 
 ```bash
 pip install -e .
@@ -69,4 +71,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-For questions, reach out via GitHub issues or contact the maintainer directly.
+For questions, reach out via GitHub issues or contact me directly.
