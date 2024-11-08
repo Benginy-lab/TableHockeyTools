@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-player_name = 'Benjamin Nygard'
+
 
 def GetPlayerPoints(player_id):
 
@@ -53,13 +53,19 @@ def find_player_id(player_name):
     print(f"could not find a {player_name}, check for spelling mistakes. First name first then last name.")
     quit()
 
-player_id = find_player_id(player_name)
-try:
-    print("found player id = "+player_id)
-except NameError:
-    print("ERR: Player id not found, check for spelling mistakes in %player_name%")
-    quit()
-except:
-    print("ERR: ay yo code ass bro")
-    quit()
-GetPlayerPos(player_id)
+
+    
+if __name__ == '__main__':
+    player_name = 'Benjamin Nygard'
+    if player_name == '':
+            player_name = input("Enter player name: ")
+    player_id = find_player_id(player_name)
+    try:
+        print("found player id = "+player_id)
+    except NameError:
+        print("ERR: Player id not found, check for spelling mistakes in %player_name%")
+        quit()
+    except:
+        print("ERR: ay yo code ass bro")
+        quit()
+    GetPlayerPos(player_id)
