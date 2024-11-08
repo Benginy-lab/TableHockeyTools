@@ -1,0 +1,19 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='TableHockeyTools',               # Your package name (must be unique on PyPI)
+    version='0.1.0',                    # Initial version
+    packages=find_packages(),           # Automatically finds the package
+    description='A collection of tools for working with TableHockey data.',  # Give a short description
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',  # Make sure README is in markdown
+    author='Benjamin Nygard',           # Your name
+    author_email='your-email@example.com',  # Your email
+    url='https://github.com/username/repo', # Link to your repository
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+    ],
+    python_requires='>=3.6',            # Minimum Python version
+)
