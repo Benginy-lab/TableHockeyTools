@@ -45,7 +45,7 @@ Check out the `examples` folder for more detailed usage.
 
 ## Documentation
 
-For full documentation of functions, see the function docstrings in `mainFunctions` or visit the [online documentation](link-to-documentation) if available.
+For full documentation of functions, see the function docstrings in `THTools/THTools.py` or visit the [pypi documentation](https://pypi.org/project/TableHockeyTools/) if available, the documentation is not yet any different from this readme.
 
 ### Example Functions
 
