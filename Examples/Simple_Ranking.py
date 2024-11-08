@@ -1,4 +1,4 @@
-import THTools.THTools as TH
+import THTools as TH
 
 
     
