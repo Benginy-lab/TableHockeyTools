@@ -26,7 +26,7 @@ def THlog(message, mode="info"):
         print(f"{TextColors.FAIL}ERROR:{message}{TextColors.ENDC}")
 
 ## gets the ranking points for a player
-def GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", verbose=False, supress_warnings=False):
+def GetPlayerPoints(player_ids=[], player_names=[], return_mode="list", verbose=False, supress_warnings=False):
     if return_mode not in ["list", "dict", "single"]:
         THlog("return_mode must be either 'single', 'list' or 'dict'", "error")
         return
@@ -35,19 +35,21 @@ def GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", verb
     elif return_mode == "dict":
         points_values = {}
 
-    player_ids = [player_ids] if type(player_ids) is not list else player_ids
-    player_names = [player_names] if type(player_names) is not list else player_names
+    player_ids = list(player_ids)
+    player_names = list(player_names)
 
-    if not ((player_ids[0] is None )^(player_names[0] is None)):
-        THlog("Please provide either a player ID or a player name.", "error")
+    if not ((len(player_ids) == 0) or (len(player_names) == 0)):
+        THlog("Please provide either a player ID or a player name, not both.", "error")
         return
+    elif len(player_ids) == 0 and len(player_names) == 0:
+        THlog("Please provide either a player ID or a player name.", "error")
     
-    if player_ids[0] is None:
+    if player_ids == []:
         player_ids = GetPlayerID(player_names, return_mode="list") #gets player ids from player names
         
         if verbose:
             THlog(f"Found player ids {player_ids}", "info")
-    if player_names[0] is None:
+    if player_names == []:
         player_names = GetPlayerName(player_ids, return_mode="list") #gets player names from player ids
         if verbose:
             THlog(f"Found player names {player_names}", "info")
@@ -108,7 +110,7 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
             THlog(f"Found player ids {player_ids}", "info")
 
     for id, name in zip(player_ids, player_names):
-        player_pos_url = "http://www.ithf.info/stiga/ithf/ranking/getrank.asmx/GetRank?ID="+str(id) 
+        player_pos_url = "https://www.ithf.info/stiga/ithf/ranking/getrank.asmx/GetRank?ID="+str(id) 
         if verbose:
             THlog(f"Requesting url {player_pos_url}", "info")
 
@@ -207,7 +209,7 @@ def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warni
                 player_id, full_name = columns[0], columns[1]
                 if player_id == id:
                     if verbose:
-                        THlog(f"Found player {full_name} with ID {player_id}", "info")
+                        THlog(f"Found player {full_name} with ID {player_id}")
                     
                     if return_mode == "list":
                         player_names.append(full_name)
@@ -223,12 +225,125 @@ def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warni
         return
     return player_names
 
+
+# Ranks the players based on their points and returns a list of ranks in a list format. input must be a dictionary of player names and points
 def LocalRanker(PlayerPoints, verbose=False, supress_warnings=False):
-    if PlayerPoints.__class__.__name__ != "dict" or len(PlayerPoints) == 0:
+    try:
+        dict(PlayerPoints)
+    except TypeError:
         THlog("PlayerPoints must be a dictionary of player names and points.", "error")
         return
+    except:
+        THlog("something unexpected happened when trying to sort the player points, EXITING...", "error")
+        return
     result = []
-    for Playerpoints, pos in zip(dict(sorted(PlayerPoints.items())).items(), range(1, len(PlayerPoints)+1)):
+    points = []
+    sortedPlayerPoints = dict(sorted(PlayerPoints.items(), key=lambda x: int(x[1]), reverse=True))
+    if verbose:
+        print(f"playerpoints : {PlayerPoints}\nIs sorted to:  {sortedPlayerPoints}")
+
+    for Playerpoints, pos in zip(sortedPlayerPoints.items(), range(1, len(PlayerPoints)+1)):
         name = Playerpoints[0]
+        points.append(int(Playerpoints[1]))
         result.append(f"[{str(pos)}] {name}: {Playerpoints[1]}")
-    return result     
+
+    if sorted(points)[::-1] != points:
+        THlog("Sorting points failed, Aborting...", "error")
+        return
+    return result
+
+# filters the players id based on different criteria
+def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, return_mode="list", filter_mode="and", verbose=False, supress_warnings=True):
+    if return_mode not in ["dict", "list"]:
+        THlog("return_mode must be either 'list' or 'dict'", "error")
+        return
+    if return_mode == "list":
+        player_ids = []
+    else:
+        player_ids = {}
+
+    url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
+    
+    response = requests.get(url)
+    response.raise_for_status()
+    
+    lines = response.text.splitlines()
+    for line in lines:
+        columns = line.split('\t')
+        if len(columns) > 1:
+            player_id, full_name, Playerteam, Playercountry, Playerranking = columns[0], columns[1], columns[2], columns[3], columns[4][:-1]
+## additive filter ---------------------------------------------------------------------
+            if filter_mode == "and":
+                if country.lower() == Playercountry.lower() or country.lower() == "any":
+                    
+                    if Team.lower() == Playerteam.lower() or Team.lower() == "any":
+                        if ranking_end is None :
+                            if verbose:
+                                THlog(f"Found player {full_name} with ID {player_id}")
+                        
+                            if return_mode == "list":
+                                player_ids.append(player_id)
+                            elif return_mode == "dict":
+                                player_ids[full_name] = player_id
+                            continue
+                        
+                        
+                        try: int(ranking_start) <= int(Playerranking) <= int(ranking_end)
+                        except ValueError:
+                            if not supress_warnings:
+                                THlog(f"Could not find ranking for {id}, skipping...", "warning")
+                            continue
+                        except TypeError:
+                            THlog("ranking_start and ranking_end must be integers", "error")
+                            return
+                        
+                        if int(ranking_start) <= int(Playerranking) <= int(ranking_end):
+                            if verbose:
+                                THlog(f"Found player {full_name} with ID {player_id}")
+                        
+                            if return_mode == "list":
+                                player_ids.append(player_id)
+                            elif return_mode == "dict":
+                                player_ids[full_name] = player_id
+## or filter ---------------------------------------------------------------------
+            elif filter_mode == "or":
+                if country.lower() == Playercountry.lower():
+                    if verbose:
+                        THlog(f"Found player {full_name} with ID {player_id}")
+                
+                    if return_mode == "list":
+                        player_ids.append(player_id)
+                    elif return_mode == "dict":
+                        player_ids[full_name] = player_id
+                if Team.lower() == Playerteam.lower():
+                    if verbose:
+                        THlog(f"Found player {full_name} with ID {player_id}")
+                
+                    if return_mode == "list":
+                        player_ids.append(player_id)
+                    elif return_mode == "dict":
+                        player_ids[full_name] = player_id
+                if ranking_end is not None:
+                    try: 
+                        int(Playerranking)
+                    except ValueError:
+                        if not supress_warnings:
+                            THlog(f"Could not find ranking for {full_name}, skipping...", "warning")
+                            continue
+                    
+                    if int(ranking_start) <= int(Playerranking) <= int(ranking_end):
+                        if verbose:
+                            THlog(f"Found player {full_name} with ID {player_id}")
+                    
+                        if return_mode == "list":
+                            player_ids.append(player_id)
+                        elif return_mode == "dict":
+                            player_ids[full_name] = player_id
+            else:
+                THlog("filter_mode must be either 'and' or 'or'", "error")
+                return
+             
+    return player_ids
+            
+
+
