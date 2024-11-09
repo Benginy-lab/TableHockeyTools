@@ -1,6 +1,5 @@
 import THTools as TH
 
-
     
 if __name__ == "__main__":
     player_names = ['Matantsev Evgeniy', 'Kalnins Rainers']
