@@ -1,15 +1,24 @@
 from setuptools import setup, find_packages
+import os
+
+# Safely load the README file
+def read_long_description():
+    readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
+    if os.path.exists(readme_path):
+        with open(readme_path, encoding="utf-8") as f:
+            return f.read()
+    return ""
 
 setup(
-    name='TableHockeyTools',               # Your package name (must be unique on PyPI)
-    version='0.1.0',                    # Initial version
-    packages=find_packages(),           # Automatically finds the package
-    description='A collection of tools for working with TableHockey data.',  # Give a short description
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',  # Make sure README is in markdown
-    author='Benjamin Nygard',           # Your name
-    author_email='Benjamin.nygard13@gmail.com',  # Your email
-    url='https://github.com/Benginy-lab/TableHockeyTools.git', # Link to your repository
+    name='TableHockeyTools',               
+    version='0.1.0',                    
+    packages=find_packages(),           
+    description='A collection of tools for working with TableHockey data.',
+    long_description=read_long_description(),
+    long_description_content_type='text/markdown',
+    author='Benjamin Nygard',           
+    author_email='Benjamin.nygard13@gmail.com',
+    url='https://github.com/Benginy-lab/TableHockeyTools.git',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Topic :: Software Development :: Libraries :: Python Modules',
@@ -17,10 +26,10 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',            # Minimum Python version
+    python_requires='>=3.6',
     license='MIT',
     install_requires=[
-        'beautifulsoup4',  # The actual name for `bs4` on PyPI
+        'beautifulsoup4',
         'require'
     ],
 )
