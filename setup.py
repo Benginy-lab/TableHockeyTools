@@ -3,7 +3,7 @@ import os
 
 # Safely load the README file
 def read_long_description():
-    readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
+    readme_path = os.path.join(os.path.dirname(__file__), 'PypiManpage.md')
     if os.path.exists(readme_path):
         with open(readme_path, encoding="utf-8") as f:
             return f.read()
@@ -12,7 +12,8 @@ def read_long_description():
 setup(
     name='TableHockeyTools',               
     version='0.1.2',                    
-    packages=find_packages(),           
+    packages=find_packages(),
+    py_modules=['THTools'],           
     description='A collection of tools for working with TableHockey data.',
     long_description=read_long_description(),
     long_description_content_type='text/markdown',
