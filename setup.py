@@ -5,7 +5,7 @@ setup(
     version='0.1.0',                    # Initial version
     packages=find_packages(),           # Automatically finds the package
     description='A collection of tools for working with TableHockey data.',  # Give a short description
-    long_description=open('Readme.md').read(),
+    long_description=open('README.md').read(),
     long_description_content_type='text/markdown',  # Make sure README is in markdown
     author='Benjamin Nygard',           # Your name
     author_email='Benjamin.nygard13@gmail.com',  # Your email
