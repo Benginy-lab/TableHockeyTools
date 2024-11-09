@@ -9,7 +9,7 @@
 
 ## Installation
 
-this project is available on pypi, it is recommended that you use pip to install TableHockeyTools:
+this project is available on [pypi](https://pypi.org/project/TableHockeyTools/) and can be installed using 'pip':
 
 ```bash
 pip install TableHockeyTools
