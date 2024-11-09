@@ -47,7 +47,9 @@ Check out the `examples` folder for more detailed usage.
 
 ## Documentation
 
-For full documentation of functions, see the manpage 'Manpage.md or visit the [pypi documentation](https://pypi.org/project/TableHockeyTools/) if available, the documentation is not yet any different from this readme.
+### [Manpage](https://github.com/Benginy-lab/TableHockeyTools/blob/main/Manpage.md)
+
+For full documentation of functions, see the [Manpage](https://github.com/Benginy-lab/TableHockeyTools/blob/main/Manpage.md) or visit the [pypi documentation](https://pypi.org/project/TableHockeyTools/) if available, the documentation is not yet any different from this readme.
 
 ### Example Functions
 
@@ -55,11 +57,11 @@ For full documentation of functions, see the manpage 'Manpage.md or visit the [p
 - **GetPlayerPoints(ID):** retrieves the points for a given player ID.
 - **GetPlayerRank(ID):** retrieves the rank for a given player ID.
   
-Each function documented in `THTools.py` and `examples/`.
+Each function documented in `THTools/THTools.py` and [`Manpage.md`](https://github.com/Benginy-lab/TableHockeyTools/blob/main/Manpage.md).
 
 ## Development
 
-Feel free to contribute! To install the package in development mode just add -e:
+Feel free to contribute! To install the package in development mode, simply add -e:
 
 ```bash
 pip install -e .
