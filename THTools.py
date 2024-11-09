@@ -1,3 +1,4 @@
+
 import requests
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
@@ -46,6 +47,10 @@ def GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", verb
         
         if verbose:
             THlog(f"Found player ids {player_ids}", "info")
+    if player_names[0] is None:
+        player_names = GetPlayerName(player_ids, return_mode="list") #gets player names from player ids
+        if verbose:
+            THlog(f"Found player names {player_names}", "info")
  
     for id, name in zip(player_ids, player_names):
         points_url = 'https://stiga.trefik.cz/ithf/ranking/player.aspx?id=' + id
@@ -59,6 +64,13 @@ def GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", verb
 
         if points_label:
             points_value = points_label.find_next("td").string.strip() #gets the value of the points from the html
+            try:
+                int(points_value)
+            except ValueError:
+                if not supress_warnings:
+                    THlog(f"{name} Has no points, skipping... ID = {id}", "warning")
+                continue
+
             if return_mode == "list":
                 points_values.append(points_value)
             elif return_mode == "dict":
@@ -211,5 +223,12 @@ def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warni
         return
     return player_names
 
-
-    
+def LocalRanker(PlayerPoints, verbose=False, supress_warnings=False):
+    if PlayerPoints.__class__.__name__ != "dict" or len(PlayerPoints) == 0:
+        THlog("PlayerPoints must be a dictionary of player names and points.", "error")
+        return
+    result = []
+    for Playerpoints, pos in zip(dict(sorted(PlayerPoints.items())).items(), range(1, len(PlayerPoints)+1)):
+        name = Playerpoints[0]
+        result.append(f"[{str(pos)}] {name}: {Playerpoints[1]}")
+    return result     
