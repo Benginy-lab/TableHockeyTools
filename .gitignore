@@ -12,5 +12,6 @@ env/
 .DS_Store
 
 *.1
-
 MANIFEST.in
+
+PypiReadme.md
