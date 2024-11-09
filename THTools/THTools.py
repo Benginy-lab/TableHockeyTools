@@ -16,6 +16,7 @@ def THlog(message, mode="info"):
         ENDC = '\033[0m'
         BOLD = '\033[1m'
         UNDERLINE = '\033[4m'
+
     if mode == "info":
         print(f"{TextColors.OKBLUE}INFO: {message}{TextColors.ENDC}")
     elif mode == "warning":
@@ -24,16 +25,28 @@ def THlog(message, mode="info"):
         print(f"{TextColors.FAIL}ERROR:{message}{TextColors.ENDC}")
 
 ## gets the ranking points for a player
-def GetPlayerPoints(player_ids=None, player_names=None):
-    if player_ids is None and player_names is None:
+def GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", verbose=False, supress_warnings=False):
+    if return_mode not in ["list", "dict", "single"]:
+        THlog("return_mode must be either 'single', 'list' or 'dict'", "error")
+        return
+    if return_mode == "list":
+        points_values = []
+    elif return_mode == "dict":
+        points_values = {}
+
+    player_ids = [player_ids] if type(player_ids) is not list else player_ids
+    player_names = [player_names] if type(player_names) is not list else player_names
+
+    if not ((player_ids[0] is None )^(player_names[0] is None)):
         THlog("Please provide either a player ID or a player name.", "error")
         return
-    if player_ids is not None and player_names is not None:
-        THlog("Please provide either a player ID or a player name, not both.", "error")
-        return
-    if player_ids is None:
-        player_ids = GetPlayerID(player_names, return_mode="list")
+    
+    if player_ids[0] is None:
+        player_ids = GetPlayerID(player_names, return_mode="list") #gets player ids from player names
         
+        if verbose:
+            THlog(f"Found player ids {player_ids}", "info")
+ 
     for id, name in zip(player_ids, player_names):
         points_url = 'https://stiga.trefik.cz/ithf/ranking/player.aspx?id=' + id
 
@@ -43,17 +56,26 @@ def GetPlayerPoints(player_ids=None, player_names=None):
         soup = BeautifulSoup(response_points.content, 'html.parser')
 
         points_label = soup.find(string="Points")
+
         if points_label:
-            points_value = points_label.find_next("td").string.strip()
-            return points_value
-        else:
-            THlog(f"Could not find points for player {name}.", "error")
+            points_value = points_label.find_next("td").string.strip() #gets the value of the points from the html
+            if return_mode == "list":
+                points_values.append(points_value)
+            elif return_mode == "dict":
+                points_values[name] = points_value
+            else:
+                return points_value
+        elif not supress_warnings:
+            THlog(f"Could not find points for player {name}.", "warning")
+        if len(points_values) == 0 and len(player_names) > 1:
+            THlog(f"could not find any points values for {player_names}", "error")
+    return points_values
 
 
-## this is not complete, need to add the rest of the functions
-def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbose=False):
-    if return_mode not in ["list", "dict"]:
-        THlog("return_mode must be either 'list' or 'dict'", "error")
+## gets the open ranking for a player, output is a list or key-value pair depending on return_mode
+def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbose=False, supress_warnings=False):
+    if return_mode not in ["list", "dict", "single"]:
+        THlog("return_mode must be either 'single', 'list' or 'dict'", "error")
         return
     if return_mode == "list":
         ranks = []
@@ -69,11 +91,7 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
     
     if player_ids[0] is None:
         player_ids = GetPlayerID(player_names, return_mode="list") #gets player ids from player names
-    
-        if len(player_ids) == 0:
-            THlog(f"Could not find any player ids for {player_names}", "error")
-            return
-        
+
         if verbose:
             THlog(f"Found player ids {player_ids}", "info")
 
@@ -86,7 +104,8 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
         response.raise_for_status()
         rank = ET.fromstring(response.content).text
         if rank == "-": #if no rank is found the response from the server is "-"
-            THlog(f"no rank for {name}", "warning")
+            if not supress_warnings:
+                THlog(f"no rank for {name}", "warning")
             continue
         else:
             if return_mode == "list":
@@ -99,7 +118,7 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
 
 
 ## gets the player id from the player's name, last name first then first name. 
-def GetPlayerID(player_names, return_mode="single", verbose=False):
+def GetPlayerID(player_names, return_mode="single", verbose=False, supress_warnings=False):
     if return_mode not in ["dict", "list", "single"]:
         THlog("return_mode must be either 'dict', 'list' or 'single'", "error")
         return
@@ -137,7 +156,7 @@ def GetPlayerID(player_names, return_mode="single", verbose=False):
                     else:
                         return int(player_id)
 
-        if len(player_ids) == 0:
+        if len(player_ids) == 0 and len(player_names) > 1 and not supress_warnings:
             THlog(f"could not find a {player_name}, check for spelling mistakes.", "warning")
     if len(player_ids) == 0:
         THlog("No player IDs found.", "error")
@@ -146,9 +165,9 @@ def GetPlayerID(player_names, return_mode="single", verbose=False):
 
 
 ##opposite of GetPlayerID, gets the player name from the player's id
-def GetPlayerName(player_ids, return_mode="single", verbose=False):
+def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warnings=False):
     if return_mode not in ["dict", "list", "single"]:
-        THlog("return_mode must be either 'dict' or 'list'", "error")
+        THlog("return_mode must be either 'single', 'list' or 'dict'", "error")
         return
     if return_mode == "list":
         player_names = []
@@ -185,13 +204,12 @@ def GetPlayerName(player_ids, return_mode="single", verbose=False):
                     else:
                         return full_name
 
-        if len(player_names) == 0 and len(player_ids) > 1:
+        if len(player_names) == 0 and len(player_ids) > 1 and not supress_warnings:
             THlog(f"could not find id {id}, check for spelling mistakes.", "warning")
     if len(player_names) == 0:
         THlog("No player names found.", "error")
         return
     return player_names
-if __name__ == "__main__":
-    print(GetPlayerRank(player_names=["Matantsev Evgeniy", "Kalnins Rainers"], return_mode="dict", verbose=True))
+
 
     
