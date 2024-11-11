@@ -379,11 +379,6 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
         THlog("Error in formatting dates, remember to input as a string 'YYYY-MM'", "error")
         return
 
-
-
-
-
-
     url = f"https://stiga.trefik.cz/ithf/ranking/rankpl.aspx?pl={playerid}"
     if verbose:
         THlog(f"Requesting {url}", "info")
