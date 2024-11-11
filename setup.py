@@ -11,7 +11,7 @@ def read_long_description():
 
 setup(
     name='TableHockeyTools',
-    version='0.1.3',
+    version='0.1.2',
     packages=find_packages(),
     py_modules=['THTools'],
     description='A collection of tools for working with TableHockey data.',
