@@ -2,10 +2,11 @@
 import requests
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
+import time
 
 
 
-
+#simple logging function
 def THlog(message, mode="info"):
     class TextColors:
         HEADER = '\033[95m'
@@ -26,7 +27,7 @@ def THlog(message, mode="info"):
         print(f"{TextColors.FAIL}ERROR:{message}{TextColors.ENDC}")
 
 ## gets the ranking points for a player
-def GetPlayerPoints(player_ids=[], player_names=[], return_mode="list", verbose=False, supress_warnings=False):
+def GetPlayerPoints(player_ids=[], player_names=[], return_mode="list", date=None, verbose=False, supress_warnings=False):
     if return_mode not in ["list", "dict", "single"]:
         THlog("return_mode must be either 'single', 'list' or 'dict'", "error")
         return
@@ -34,6 +35,8 @@ def GetPlayerPoints(player_ids=[], player_names=[], return_mode="list", verbose=
         points_values = []
     elif return_mode == "dict":
         points_values = {}
+    else:
+        points_values = None
 
     player_ids = list(player_ids)
     player_names = list(player_names)
@@ -43,17 +46,17 @@ def GetPlayerPoints(player_ids=[], player_names=[], return_mode="list", verbose=
         return
     elif len(player_ids) == 0 and len(player_names) == 0:
         THlog("Please provide either a player ID or a player name.", "error")
-    
+
     if player_ids == []:
         player_ids = GetPlayerID(player_names, return_mode="list") #gets player ids from player names
-        
+
         if verbose:
             THlog(f"Found player ids {player_ids}", "info")
     if player_names == []:
         player_names = GetPlayerName(player_ids, return_mode="list") #gets player names from player ids
         if verbose:
             THlog(f"Found player names {player_names}", "info")
- 
+
     for id, name in zip(player_ids, player_names):
         points_url = 'https://stiga.trefik.cz/ithf/ranking/player.aspx?id=' + id
 
@@ -102,7 +105,7 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
     if not ((player_ids[0] is None )^(player_names[0] is None)):
         THlog("Please provide either a player ID or a player name.", "error")
         return
-    
+
     if player_ids[0] is None:
         player_ids = GetPlayerID(player_names, return_mode="list") #gets player ids from player names
 
@@ -110,7 +113,7 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
             THlog(f"Found player ids {player_ids}", "info")
 
     for id, name in zip(player_ids, player_names):
-        player_pos_url = "https://www.ithf.info/stiga/ithf/ranking/getrank.asmx/GetRank?ID="+str(id) 
+        player_pos_url = "https://www.ithf.info/stiga/ithf/ranking/getrank.asmx/GetRank?ID="+str(id)
         if verbose:
             THlog(f"Requesting url {player_pos_url}", "info")
 
@@ -131,7 +134,7 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
     return ranks
 
 
-## gets the player id from the player's name, last name first then first name. 
+## gets the player id from the player's name, last name first then first name.
 def GetPlayerID(player_names, return_mode="single", verbose=False, supress_warnings=False):
     if return_mode not in ["dict", "list", "single"]:
         THlog("return_mode must be either 'dict', 'list' or 'single'", "error")
@@ -144,10 +147,10 @@ def GetPlayerID(player_names, return_mode="single", verbose=False, supress_warni
         player_ids = 0
 
     url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
-    
+
     response = requests.get(url)
     response.raise_for_status()
-    
+
     lines = response.text.splitlines()
     if player_names is None:
         THlog("Please provide either a player name or a list of player names.", "error")
@@ -162,7 +165,7 @@ def GetPlayerID(player_names, return_mode="single", verbose=False, supress_warni
                 if full_name.lower().__contains__(player_name.lower()):
                     if verbose:
                         THlog(f"Found player {full_name} with ID {player_id}", "info")
-                    
+
                     if return_mode == "list":
                         player_ids.append(player_id)
                     elif return_mode == "dict":
@@ -191,10 +194,10 @@ def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warni
         player_names = 0
 
     url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
-    
+
     response = requests.get(url)
     response.raise_for_status()
-    
+
     lines = response.text.splitlines()
     if player_ids is None:
         THlog("Please provide either a player name or a list of player names.", "error")
@@ -210,7 +213,7 @@ def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warni
                 if player_id == id:
                     if verbose:
                         THlog(f"Found player {full_name} with ID {player_id}")
-                    
+
                     if return_mode == "list":
                         player_names.append(full_name)
                     elif return_mode == "dict":
@@ -263,10 +266,10 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
         player_ids = {}
 
     url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
-    
+
     response = requests.get(url)
     response.raise_for_status()
-    
+
     lines = response.text.splitlines()
     for line in lines:
         columns = line.split('\t')
@@ -275,19 +278,19 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
 ## additive filter ---------------------------------------------------------------------
             if filter_mode == "and":
                 if country.lower() == Playercountry.lower() or country.lower() == "any":
-                    
+
                     if Team.lower() == Playerteam.lower() or Team.lower() == "any":
                         if ranking_end is None :
                             if verbose:
                                 THlog(f"Found player {full_name} with ID {player_id}")
-                        
+
                             if return_mode == "list":
                                 player_ids.append(player_id)
                             elif return_mode == "dict":
                                 player_ids[full_name] = player_id
                             continue
-                        
-                        
+
+
                         try: int(ranking_start) <= int(Playerranking) <= int(ranking_end)
                         except ValueError:
                             if not supress_warnings:
@@ -296,11 +299,11 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
                         except TypeError:
                             THlog("ranking_start and ranking_end must be integers", "error")
                             return
-                        
+
                         if int(ranking_start) <= int(Playerranking) <= int(ranking_end):
                             if verbose:
                                 THlog(f"Found player {full_name} with ID {player_id}")
-                        
+
                             if return_mode == "list":
                                 player_ids.append(player_id)
                             elif return_mode == "dict":
@@ -310,7 +313,7 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
                 if country.lower() == Playercountry.lower():
                     if verbose:
                         THlog(f"Found player {full_name} with ID {player_id}")
-                
+
                     if return_mode == "list":
                         player_ids.append(player_id)
                     elif return_mode == "dict":
@@ -318,23 +321,23 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
                 if Team.lower() == Playerteam.lower():
                     if verbose:
                         THlog(f"Found player {full_name} with ID {player_id}")
-                
+
                     if return_mode == "list":
                         player_ids.append(player_id)
                     elif return_mode == "dict":
                         player_ids[full_name] = player_id
                 if ranking_end is not None:
-                    try: 
+                    try:
                         int(Playerranking)
                     except ValueError:
                         if not supress_warnings:
                             THlog(f"Could not find ranking for {full_name}, skipping...", "warning")
                             continue
-                    
+
                     if int(ranking_start) <= int(Playerranking) <= int(ranking_end):
                         if verbose:
                             THlog(f"Found player {full_name} with ID {player_id}")
-                    
+
                         if return_mode == "list":
                             player_ids.append(player_id)
                         elif return_mode == "dict":
@@ -342,8 +345,35 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
             else:
                 THlog("filter_mode must be either 'and' or 'or'", "error")
                 return
-             
     return player_ids
-            
+
+def GetPointsHistory(playerid, date):
+    try:
+        str(playerid)
+    except TypeError:
+        THlog("invalid playerid, please enter a number", "error")
+        return
+
+    try:
+        date.tm_year
+        date.tm_month
+    except:
+        THlog("date must be inputted as a time.struct_time object", "error")
+        return
 
 
+    url = "https://stiga.trefik.cz/ithf/ranking/rankpl.aspx?pl="+str(playerid)
+
+    response = requests.get(url)
+    response.raise_for_status()
+
+    soup = BeautifulSoup(response.content, "html.parser")
+
+    soup.find(str(date.tm_year))
+    print(soup)
+
+
+
+id=GetPlayerID("nygard benjamin")
+
+print(GetPointsHistory(id, )
