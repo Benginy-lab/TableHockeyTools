@@ -10,14 +10,14 @@ def read_long_description():
     return ""
 
 setup(
-    name='TableHockeyTools',               
-    version='0.1.2',                    
+    name='TableHockeyTools',
+    version='0.1.3',
     packages=find_packages(),
-    py_modules=['THTools'],           
+    py_modules=['THTools'],
     description='A collection of tools for working with TableHockey data.',
     long_description=read_long_description(),
     long_description_content_type='text/markdown',
-    author='Benjamin Nygard',           
+    author='Benjamin Nygard',
     author_email='Benjamin.nygard13@gmail.com',
     url='https://github.com/Benginy-lab/TableHockeyTools.git',
     package_data={
@@ -34,7 +34,9 @@ setup(
     license='MIT',
     install_requires=[
         'beautifulsoup4',
-        'require'
+        'require',
+        'xml.etree.ElementTree',
+        'time'
     ],
 
 )
