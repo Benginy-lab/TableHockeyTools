@@ -9,15 +9,10 @@ import time
 #simple logging function
 def THlog(message, mode="info"):
     class TextColors:
-        HEADER = '\033[95m'
         OKBLUE = '\033[94m'
-        OKCYAN = '\033[96m'
-        OKGREEN = '\033[92m'
         WARNING = '\033[93m'
         FAIL = '\033[91m'
         ENDC = '\033[0m'
-        BOLD = '\033[1m'
-        UNDERLINE = '\033[4m'
 
     if mode == "info":
         print(f"{TextColors.OKBLUE}INFO: {message}{TextColors.ENDC}")
@@ -292,7 +287,15 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
                             continue
 
 
-                        try: int(ranking_start) <= int(Playerranking) <= int(ranking_end)
+                        try:
+                            if int(ranking_start) <= int(Playerranking) <= int(ranking_end):
+                                if verbose:
+                                    THlog(f"Found player {full_name} with ID {player_id}")
+
+                                if return_mode == "list":
+                                    player_ids.append(player_id)
+                                elif return_mode == "dict":
+                                    player_ids[full_name] = player_id
                         except ValueError:
                             if not supress_warnings:
                                 THlog(f"Could not find ranking for {id}, skipping...", "warning")
@@ -301,14 +304,7 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
                             THlog("ranking_start and ranking_end must be integers", "error")
                             return
 
-                        if int(ranking_start) <= int(Playerranking) <= int(ranking_end):
-                            if verbose:
-                                THlog(f"Found player {full_name} with ID {player_id}")
 
-                            if return_mode == "list":
-                                player_ids.append(player_id)
-                            elif return_mode == "dict":
-                                player_ids[full_name] = player_id
 ## or filter ---------------------------------------------------------------------
             elif filter_mode == "or":
                 if country.lower() == Playercountry.lower():
@@ -348,7 +344,7 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
                 return
     return player_ids
 
-def GetHistory(playerid, date_start, date_end=None, getattr="points", return_mode="single", verbose=False, supress_warnings=False):
+def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="single", verbose=False, supress_warnings=False):
     points = []
     ranks = []
     dates = []
@@ -362,12 +358,15 @@ def GetHistory(playerid, date_start, date_end=None, getattr="points", return_mod
     if return_mode not in ["single", "list", "dict"]:
         THlog("return mode must be either 'dict','single' or 'list'", "error")
         return
+    elif return_mode == "single" and getattr =="both":
+        THlog("Can not return single when getattr is both", "error")
+        return
 
     try:
         if date_end is None:
-            dates.append(time.strptime(date_start, "%Y-%m"))
+            dates.append(time.strptime(date, "%Y-%m"))
         else:
-            start_date = time.strptime(date_start, "%Y-%m")
+            start_date = time.strptime(date, "%Y-%m")
             end_date = time.strptime(date_end, "%Y-%m")
             current_date = start_date
             while current_date <= end_date:
@@ -379,6 +378,7 @@ def GetHistory(playerid, date_start, date_end=None, getattr="points", return_mod
     except TypeError:
         THlog("Error in formatting dates, remember to input as a string 'YYYY-MM'", "error")
         return
+
 
 
 
