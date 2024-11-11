@@ -6,13 +6,19 @@
 
 ## SYNOPSIS
 ```python
-from THTools import THlog, GetPlayerPoints, GetPlayerRank, GetPlayerID, GetPlayerName
+from THTools import THlog, GetPlayerPoints, GetPlayerRank, GetPlayerID, GetPlayerName, IDfilter, LocalRanker,
 ```
 
 ## DESCRIPTION
 **THTools** provides functions to work with table hockey player data. This includes functions for retrieving player ranking points, ranks, IDs, and names. Logging is provided with customizable verbosity and warning suppression.
 
 ## FUNCTIONS
+
+### DEFAULT PARAMETERS
+- `return_mode` (str): Output format, one of "list", "dict", or "single". _(default: "list")_
+- `verbose` (bool): If `True`, logs additional information. _(default: False)_
+- `supress_warnings` (bool): If `True`, suppresses warning logs. _(default: False)_
+
 
 ### THlog(message, mode="info")
 Logs messages with different color-coded modes.
@@ -27,9 +33,6 @@ Fetches ranking points for specified players.
 - **Parameters:**
   - `player_ids` (str or list): Player ID(s).
   - `player_names` (str or list): Player name(s).
-  - `return_mode` (str): Output format, one of "list", "dict", or "single". _(default: "list")_
-  - `verbose` (bool): If `True`, logs additional information. _(default: False)_
-  - `supress_warnings` (bool): If `True`, suppresses warning logs. _(default: False)_
 
 - **Returns:** List, dict, or single value of points.
 
@@ -56,6 +59,26 @@ Fetches player name(s) for given player ID(s).
 - **Parameters:** Same as **GetPlayerID**.
 
 - **Returns:** List, dict, or single value of player names.
+
+### LocalRanker(PlayerPoints, verbose=False, supress_warnings=False)
+ranks the given players with given points.
+- **Input:** Dictionary _{"PlayerName":points}_
+
+- **Parameters:**
+  - `Playerpoints` : a Dictionary of Playernames and points
+  - _Default parameters except return_mode_
+
+- **Returns:** list formatted as "[postition]Name:Points"
+
+### IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, return_mode="list", filter_mode="and", verbose=False, supress_warnings=True)
+Returns every id containing these parameters.
+- **Parameters:**
+  - `country` filters everybody from other countries
+  - `team` filters everybody from other teams.
+  - `ranking_start` and `ranking_end` returns only players who are between theese two postitions
+  - `filter_mode` contains two modes: `"and"` and `"or"`.  `"and"` mode returns only players who are within both/all of the conditions, while `"or"` mode returns if player fits at least one of the categories.
+  - _Default parameters_
+
 
 ## EXAMPLES
 
