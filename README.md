@@ -40,7 +40,7 @@ for player_name in player_names:
 for player_id, player_name in zip(player_ids, player_names):
     player_points = tht.GetPlayerPoints(player_id)
     print(f"{player_name} has {player_points} points.")
-    
+
 ```
 
 Check out the `examples` folder for more detailed usage.
@@ -49,14 +49,14 @@ Check out the `examples` folder for more detailed usage.
 
 ### [Manpage](https://github.com/Benginy-lab/TableHockeyTools/blob/main/Manpage.md)
 
-For full documentation of functions, see the [Manpage](https://github.com/Benginy-lab/TableHockeyTools/blob/main/Manpage.md) or visit the [pypi documentation](https://pypi.org/project/TableHockeyTools/) if available, the documentation is not yet any different from this readme.
+For full documentation of functions, see the [Manpage](https://github.com/Benginy-lab/TableHockeyTools/blob/main/Manpage.md)
 
 ### Example Functions
 
 - **GetPlayerID(Name):** retrieves the ITHF player ID for a given player name.
 - **GetPlayerPoints(ID):** retrieves the points for a given player ID.
 - **GetPlayerRank(ID):** retrieves the rank for a given player ID.
-  
+
 Each function documented in `THTools/THTools.py` and [`Manpage.md`](https://github.com/Benginy-lab/TableHockeyTools/blob/main/Manpage.md).
 
 ## Development
