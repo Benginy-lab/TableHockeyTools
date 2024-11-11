@@ -347,33 +347,34 @@ def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, retur
                 return
     return player_ids
 
-def GetPointsHistory(playerid, date):
+def GetPointsHistory(playerid, date, verbose=False):
     try:
-        str(playerid)
+        int(playerid)
     except TypeError:
         THlog("invalid playerid, please enter a number", "error")
         return
-
     try:
-        date.tm_year
-        date.tm_month
+        str(date.tm_year)
+        str(date.tm_mon)
     except:
-        THlog("date must be inputted as a time.struct_time object", "error")
+        THlog("object must be a Time.struct_time object", "error")
         return
 
-
     url = "https://stiga.trefik.cz/ithf/ranking/rankpl.aspx?pl="+str(playerid)
+    if verbose:
+        THlog(f"requesting {url}")
+
 
     response = requests.get(url)
     response.raise_for_status()
 
     soup = BeautifulSoup(response.content, "html.parser")
 
-    soup.find(str(date.tm_year))
     print(soup)
+    soup.find(str(date.tm_year))
 
 
 
 id=GetPlayerID("nygard benjamin")
 
-print(GetPointsHistory(id, )
+print(GetPointsHistory(id, time.localtime()))
