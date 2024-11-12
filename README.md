@@ -64,6 +64,8 @@ Each function documented in `THTools/THTools.py` and [`Manpage.md`](https://gith
 Feel free to contribute! To install the package in development mode, simply add -e:
 
 ```bash
+git clone https://github.com/Benginy-lab/TableHockeyTools.git
+cd TableHockeyTools
 pip install -e .
 ```
 
