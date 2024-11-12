@@ -438,23 +438,22 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
             ranks.append(ranking_value)
             if verbose:
                 THlog(f"Found rank {ranking_value} for {time.strftime('%B %Y', date)}")
-
-        ranks.append(None)
-        if not supress_warnings:
-            THlog(f"No valid ranking data found for {time.strftime('%B %Y', date)}", "warning")
-        continue
+        else:
+            ranks.append(None)
+            if not supress_warnings:
+                THlog(f"No valid ranking data found for {time.strftime('%B %Y', date)}", "warning")
+    
         if points_value.isdigit():
-            if points_value.isdigit():
-                if return_mode == "single":
-                    return points_value
-                points.append(points_value)
-                if verbose:
-                    THlog(f"Found points {points_value} for {time.strftime('%B %Y', date)}")
-            else:
-                points.append(None)
-                if not supress_warnings:
-                    THlog(f"No valid points data found for {time.strftime('%B %Y', date)}", "warning")
-                continue
+            if return_mode == "single":
+                return points_value
+            points.append(points_value)
+            if verbose:
+                THlog(f"Found points {points_value} for {time.strftime('%B %Y', date)}")
+        else:
+            points.append(None)
+            if not supress_warnings:
+                THlog(f"No valid points data found for {time.strftime('%B %Y', date)}", "warning")
+    
     if return_mode == "list":
         if getattr == "points":
             return points
