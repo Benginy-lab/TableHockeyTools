@@ -431,29 +431,27 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
         link_tag = month_cell.find("a")  # Find the link in this cell
         points_value = link_tag.text.strip() if link_tag else None
 
+        try:
+            if ranking_value.isdigit():
+                if return_mode == "single":
+                    return ranking_value
+                ranks.append(ranking_value)
+                if verbose:
+                    THlog(f"Found rank {ranking_value} for {time.strftime('%B %Y', date)}")
+        except:
+            if not supress_warnings:
+                THlog(f"No valid ranking data found for {time.strftime('%B %Y', date)} skipping...", "warning")
+        try:
+            if points_value.isdigit():
+                if return_mode == "single":
+                    return points_value
+                points.append(points_value)
+                if verbose:
+                    THlog(f"Found points {points_value} for {time.strftime('%B %Y', date)}")
+        except:
+            if not supress_warnings:
+                THlog(f"No valid points data found for {time.strftime('%B %Y', date)} skipping...", "warning")
 
-        if ranking_value.isdigit():
-            if return_mode == "single":
-                return ranking_value
-            ranks.append(ranking_value)
-            if verbose:
-                THlog(f"Found rank {ranking_value} for {time.strftime('%B %Y', date)}")
-        else:
-            ranks.append(None)
-            if not supress_warnings:
-                THlog(f"No valid ranking data found for {time.strftime('%B %Y', date)}", "warning")
-    
-        if points_value.isdigit():
-            if return_mode == "single":
-                return points_value
-            points.append(points_value)
-            if verbose:
-                THlog(f"Found points {points_value} for {time.strftime('%B %Y', date)}")
-        else:
-            points.append(None)
-            if not supress_warnings:
-                THlog(f"No valid points data found for {time.strftime('%B %Y', date)}", "warning")
-    
     if return_mode == "list":
         if getattr == "points":
             return points
@@ -464,16 +462,15 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
             for rank,points in zip(ranks, points):
                 returnlst.append([points, rank])
             return returnlst
-
+    print(points)
     dict={}
-    for date in dates:
+    for date, rank, point in zip(dates, ranks, points):
         date = time.strftime("%Y-%m", date)
-        for rank, point in zip(ranks, points):
-            if getattr == "points":
-                print(point)
-                dict[date]= point
-            elif getattr == "rank":
-                dict[date]=rank
-            else:
-                dict[date]=[point, rank]
+
+        if getattr == "points":
+            dict[date]= point
+        elif getattr == "rank":
+            dict[date]=rank
+        else:
+            dict[date]=[point, rank]
     return dict
