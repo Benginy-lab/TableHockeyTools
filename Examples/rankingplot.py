@@ -1,18 +1,31 @@
+from TableHockeyTools.THTools import GetPlayerName
 import matplotlib.pyplot as plt
-import THTools as TH
 import time
-from datetime import datetime
+import THTools as TH
+from matplotlib.patches import FancyBboxPatch
 
-
-id = TH.GetPlayerID("nygard benjamin")
+# Sample data
+playername = input("input player name: \n")
+playerid = TH.GetPlayerID(playername, return_mode="single")
 now = time.localtime()
-yearago = f"{now.tm_year-3}-{now.tm_mon}"
+yearago = f"{now.tm_year - 1}-{now.tm_mon}"
+data = TH.GetHistory(playerid, yearago, now, return_mode="dict")
 
-data = TH.GetHistory(id, yearago, date_end=now, getattr="points", return_mode="dict")
-x_values = data.values()
-y_values = [datetime.strptime(date_str, "%Y-%m") for date_str in data.keys()]
+y_values = list(data.values())
+x_values = [time.mktime(time.strptime(date_str, "%Y-%m")) for date_str in data.keys()]
+
+# Create a figure and add a rounded background patch
+
+# Scatter plot
+plt.plot(x_values, y_values, color='blue', marker='o')
+
+# Labeling the plot
+plt.title(f"Plot for {str(TH.GetPlayerName([playerid]))}")
+plt.ylabel("Y values")
+plt.xlabel("X values (Date)")
 
 
-plt.plot(y_values, x_values)
+# Custom formatting of the y-axis to show dates
 plt.gcf().autofmt_xdate()
+# Display the plot
 plt.show()
