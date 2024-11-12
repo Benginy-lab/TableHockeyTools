@@ -186,7 +186,12 @@ def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warni
     elif return_mode == "dict":
         player_names = {}
     else:
-        player_names = 0
+        player_names = []
+    if player_ids is None:
+        THlog("Please provide either a player name or a list of player names.", "error")
+        return
+
+    player_ids = [player_ids] if type(player_ids) is not list else player_ids
 
     url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
 
@@ -194,18 +199,15 @@ def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warni
     response.raise_for_status()
 
     lines = response.text.splitlines()
-    if player_ids is None:
-        THlog("Please provide either a player name or a list of player names.", "error")
-        return
-    if player_ids.__class__.__name__ == "str":
-        player_ids = [player_ids]
+
 
     for id in player_ids:
         for line in lines:
             columns = line.split('\t')
             if len(columns) > 1:
                 player_id, full_name = columns[0], columns[1]
-                if player_id == id:
+
+                if int(player_id) == int(id):
                     if verbose:
                         THlog(f"Found player {full_name} with ID {player_id}")
 
@@ -462,7 +464,6 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
             for rank,points in zip(ranks, points):
                 returnlst.append([points, rank])
             return returnlst
-    print(points)
     dict={}
     for date, rank, point in zip(dates, ranks, points):
         date = time.strftime("%Y-%m", date)
