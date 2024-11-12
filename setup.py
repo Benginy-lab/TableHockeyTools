@@ -3,7 +3,7 @@ import os
 
 # Safely load the README file
 def read_long_description():
-    readme_path = os.path.join(os.path.dirname(__file__), 'PypiManpage.md')
+    readme_path = os.path.join(os.path.dirname(__file__), 'PypiReadme.md')
     if os.path.exists(readme_path):
         with open(readme_path, encoding="utf-8") as f:
             return f.read()

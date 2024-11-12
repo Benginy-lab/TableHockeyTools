@@ -358,26 +358,48 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
     if return_mode not in ["single", "list", "dict"]:
         THlog("return mode must be either 'dict','single' or 'list'", "error")
         return
+
+    if getattr not in ["points","rank","both"]:
+        THlog("return mode must be either 'points','rank' or 'both'", "error")
+        return
+
     elif return_mode == "single" and getattr =="both":
         THlog("Can not return single when getattr is both", "error")
         return
 
-    try:
-        if date_end is None:
-            dates.append(time.strptime(date, "%Y-%m"))
-        else:
-            start_date = time.strptime(date, "%Y-%m")
-            end_date = time.strptime(date_end, "%Y-%m")
-            current_date = start_date
-            while current_date <= end_date:
-                dates.append(current_date)
-                # Get next month
-                year = current_date.tm_year + (current_date.tm_mon) // 12
-                month = (current_date.tm_mon % 12) + 1
-                current_date = time.strptime(f"{year}-{month:02d}", "%Y-%m")
-    except TypeError:
-        THlog("Error in formatting dates, remember to input as a string 'YYYY-MM'", "error")
-        return
+    if not isinstance(date, time.struct_time):
+        try:
+            date = time.strptime(date, "%Y-%m")
+        except TypeError:
+            THlog("Error in formatting dates, remember to input as a string 'YYYY-MM'", "error")
+            return
+    if date_end != None and not isinstance(date_end, time.struct_time):
+            try:
+                date_end = time.strptime(date_end, "%Y-%m")
+            except TypeError:
+                THlog("Error in formatting dates, remember to input as a string 'YYYY-MM'", "error")
+                return
+
+
+    if date_end is None:
+        dates.append(date)
+    else:
+        current_date = date
+        if not current_date <= date_end:
+            THlog("date_end must be higher than date", "error")
+            return
+        while current_date <= date_end:
+            dates.append(current_date)
+            # Get next month
+            year = current_date.tm_year + (current_date.tm_mon) // 12
+            month = (current_date.tm_mon % 12) + 1
+            current_date = time.strptime(f"{year}-{month:02d}", "%Y-%m")
+    if verbose:
+        verboseprint=[]
+        for date in dates:
+            verboseprint.append(time.strftime("%Y-%m", date))
+
+        THlog(f"dates to check: {verboseprint}")
 
     url = f"https://stiga.trefik.cz/ithf/ranking/rankpl.aspx?pl={playerid}"
     if verbose:
@@ -402,31 +424,37 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
             THlog("Invalid month index or unexpected table format", "error")
             return
 
+
         month_cell = month_cells[month_index]
 
         ranking_value = month_cell.text.split('.')[0].strip()  # Get the numeric part
-        points_value = month_cell.find("a").text.strip()  # Find the link in this cell
+        link_tag = month_cell.find("a")  # Find the link in this cell
+        points_value = link_tag.text.strip() if link_tag else None
 
 
-        if getattr == "rank" or "both":
-            if ranking_value.isdigit():
-                if return_mode == "single":
-                    return ranking_value
-                ranks.append(ranking_value)
-            else:
-                if not supress_warnings:
-                    THlog(f"No valid ranking data found for {time.strftime('%B %Y', date)}", "warning")
-                continue
-        if getattr == "points" or "both":
+        if ranking_value.isdigit():
+            if return_mode == "single":
+                return ranking_value
+            ranks.append(ranking_value)
+            if verbose:
+                THlog(f"Found rank {ranking_value} for {time.strftime('%B %Y', date)}")
+
+        ranks.append(None)
+        if not supress_warnings:
+            THlog(f"No valid ranking data found for {time.strftime('%B %Y', date)}", "warning")
+        continue
+        if points_value.isdigit():
             if points_value.isdigit():
-                if points_value.isdigit():
-                    if return_mode == "single":
-                        return points_value
-                    points.append(points_value)
-                else:
-                    if not supress_warnings:
-                        THlog(f"No valid points data found for {time.strftime('%B %Y', date)}", "warning")
-                    continue
+                if return_mode == "single":
+                    return points_value
+                points.append(points_value)
+                if verbose:
+                    THlog(f"Found points {points_value} for {time.strftime('%B %Y', date)}")
+            else:
+                points.append(None)
+                if not supress_warnings:
+                    THlog(f"No valid points data found for {time.strftime('%B %Y', date)}", "warning")
+                continue
     if return_mode == "list":
         if getattr == "points":
             return points
@@ -441,11 +469,12 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
     dict={}
     for date in dates:
         date = time.strftime("%Y-%m", date)
-        for rank,points in zip(ranks, points):
+        for rank, point in zip(ranks, points):
             if getattr == "points":
-                dict[date]=points
+                print(point)
+                dict[date]= point
             elif getattr == "rank":
                 dict[date]=rank
             else:
-                dict[date]=[points, rank]
+                dict[date]=[point, rank]
     return dict
