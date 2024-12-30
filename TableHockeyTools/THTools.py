@@ -32,9 +32,8 @@ def GetPlayerPoints(player_ids=[], player_names=[], return_mode="list", date=Non
         points_values = {}
     else:
         points_values = None
-
-    player_ids = list(player_ids)
-    player_names = list(player_names)
+    player_ids = [player_ids] if type(player_ids) is not list else player_ids
+    player_names = [player_names] if type(player_names) is not list else player_names
 
     if not ((len(player_ids) == 0) or (len(player_names) == 0)):
         THlog("Please provide either a player ID or a player name, not both.", "error")
@@ -97,11 +96,14 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
     player_ids = [player_ids] if type(player_ids) is not list else player_ids
     player_names = [player_names] if type(player_names) is not list else player_names
 
-    if not ((player_ids[0] is None )^(player_names[0] is None)):
-        THlog("Please provide either a player ID or a player name.", "error")
+    if not ((len(player_ids) == 0) or (len(player_names) == 0)):
+        THlog("Please provide either a player ID or a player name, not both.", "error")
         return
+    elif len(player_ids) == 0 and len(player_names) == 0:
+        THlog("Please provide either a player ID or a player name.", "error")
 
-    if player_ids[0] is None:
+    print(len(player_ids))
+    if len(player_ids) == 0:
         player_ids = GetPlayerID(player_names, return_mode="list") #gets player ids from player names
 
         if verbose:

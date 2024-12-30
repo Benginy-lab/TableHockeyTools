@@ -11,7 +11,7 @@ def read_long_description():
 
 setup(
     name='TableHockeyTools',
-    version='0.1.3',
+    version='0.1.3.3',
     packages=find_packages(),
     py_modules=['THTools'],
     description='A collection of tools for working with TableHockey data.',
@@ -35,8 +35,6 @@ setup(
     install_requires=[
         'beautifulsoup4',
         'require',
-        'xml.etree.ElementTree',
-        'time'
     ],
 
 )
