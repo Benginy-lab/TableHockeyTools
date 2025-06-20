@@ -1,9 +1,22 @@
 
+import re
 import requests
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
 import time
+from functools import lru_cache
 
+# Utility function to ensure input is a list
+def ensure_list(x):
+    return x if isinstance(x, list) else [x]
+
+# cashing the player id data to avoid excessive requests
+@lru_cache(maxsize=10)
+def GetPlayerList():
+    url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.text.splitlines()
 
 
 #simple logging function
@@ -22,7 +35,7 @@ def THlog(message, mode="info"):
         print(f"{TextColors.FAIL}ERROR:{message}{TextColors.ENDC}")
 
 ## gets the ranking points for a player
-def GetPlayerPoints(player_ids=[], player_names=[], return_mode="list", date=None, verbose=False, supress_warnings=False):
+def GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", date=None, verbose=False, supress_warnings=False):
     if return_mode not in ["list", "dict", "single"]:
         THlog("return_mode must be either 'single', 'list' or 'dict'", "error")
         return
@@ -32,27 +45,22 @@ def GetPlayerPoints(player_ids=[], player_names=[], return_mode="list", date=Non
         points_values = {}
     else:
         points_values = None
-    player_ids = [player_ids] if type(player_ids) is not list else player_ids
-    player_names = [player_names] if type(player_names) is not list else player_names
 
-    if not ((len(player_ids) == 0) or (len(player_names) == 0)):
-        THlog("Please provide either a player ID or a player name, not both.", "error")
-        return
-    elif len(player_ids) == 0 and len(player_names) == 0:
+    if player_ids==None and player_names==None:
         THlog("Please provide either a player ID or a player name.", "error")
 
-    if player_ids == []:
-        player_ids = GetPlayerID(player_names, return_mode="list") #gets player ids from player names
-
-        if verbose:
-            THlog(f"Found player ids {player_ids}", "info")
-    if player_names == []:
-        player_names = GetPlayerName(player_ids, return_mode="list") #gets player names from player ids
-        if verbose:
-            THlog(f"Found player names {player_names}", "info")
+    tmpplayer_ids = IDPlayer(player_names, return_mode="list", direction="N2ID") #gets player ids from player names
+    if verbose:
+        THlog(f"Found player ids {tmpplayer_ids}", "info")
+    player_names = ensure_list(player_names)
+    player_names += IDPlayer(player_ids, return_mode="list", direction="ID2N") #gets player names from player ids
+    
+    player_ids = ensure_list(player_ids)+tmpplayer_ids
+    if verbose:
+        THlog(f"Found player names {player_names}", "info")
 
     for id, name in zip(player_ids, player_names):
-        points_url = 'https://stiga.trefik.cz/ithf/ranking/player.aspx?id=' + id
+        points_url = f'https://stiga.trefik.cz/ithf/ranking/player.aspx?id={id}'
 
         response_points = requests.get(points_url)
         response_points.raise_for_status()
@@ -82,7 +90,6 @@ def GetPlayerPoints(player_ids=[], player_names=[], return_mode="list", date=Non
             THlog(f"could not find any points values for {player_names}", "error")
     return points_values
 
-
 ## gets the open ranking for a player, output is a list or key-value pair depending on return_mode
 def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbose=False, supress_warnings=False):
     if return_mode not in ["list", "dict", "single"]:
@@ -92,23 +99,21 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
         ranks = []
     elif return_mode == "dict":
         ranks = {}
+    player_ids = ensure_list(player_ids)
+    player_names = ensure_list(player_names)
 
-    player_ids = [player_ids] if type(player_ids) is not list else player_ids
-    player_names = [player_names] if type(player_names) is not list else player_names
-
-    if not ((len(player_ids) == 0) or (len(player_names) == 0)):
-        THlog("Please provide either a player ID or a player name, not both.", "error")
-        return
-    elif len(player_ids) == 0 and len(player_names) == 0:
+    if len(player_ids) == 0 and len(player_names) == 0:
         THlog("Please provide either a player ID or a player name.", "error")
+    
+    tmpplayer_ids = IDPlayer(player_names, return_mode="list", direction="N2ID", supress_warnings=True) #gets player ids from player names
 
-    print(len(player_ids))
-    if len(player_ids) == 0:
-        player_ids = GetPlayerID(player_names, return_mode="list") #gets player ids from player names
+    if verbose:
+        THlog(f"Found player ids {tmpplayer_ids}", "info")
+    
+    player_names += IDPlayer(player_ids, return_mode="list", direction="ID2N", supress_warnings=True) #gets player names from player ids
 
-        if verbose:
-            THlog(f"Found player ids {player_ids}", "info")
 
+    player_ids = tmpplayer_ids+player_ids
     for id, name in zip(player_ids, player_names):
         player_pos_url = "https://www.ithf.info/stiga/ithf/ranking/getrank.asmx/GetRank?ID="+str(id)
         if verbose:
@@ -130,103 +135,75 @@ def GetPlayerRank(player_ids=None, player_names=None, return_mode="list", verbos
                 return rank
     return ranks
 
-
-## gets the player id from the player's name, last name first then first name.
-def GetPlayerID(player_names, return_mode="single", verbose=False, supress_warnings=False):
+# New IDPlayer function that handles both name-to-ID and ID-to-name lookups
+def IDPlayer(query_values, return_mode="single", direction="N2ID", verbose=False, supress_warnings=False):
     if return_mode not in ["dict", "list", "single"]:
         THlog("return_mode must be either 'dict', 'list' or 'single'", "error")
         return
-    if return_mode == "list":
-        player_ids = []
-    elif return_mode == "dict":
-        player_ids = {}
-    else:
-        player_ids = 0
+
+    if direction not in ["N2ID", "ID2N"]:
+        THlog("direction must be either 'N2ID'(name to ID) or 'ID2N'(ID to name)", "error")
+        return
+    # check for empty input
+    query_values = ensure_list(query_values)
+    if query_values[0] is None:
+        if not supress_warnings:
+            THlog("No query values provided", "warning")
+        if return_mode == "single":
+            return
+        else:
+            return []
 
     url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
-
     response = requests.get(url)
     response.raise_for_status()
-
     lines = response.text.splitlines()
-    if player_names is None:
-        THlog("Please provide either a player name or a list of player names.", "error")
-        return
-    if player_names.__class__.__name__ == "str":
-        player_names = [player_names]
-    for player_name in player_names:
+
+    result = [] if return_mode == "list" else {} if return_mode == "dict" else None
+
+    for query in query_values:
+        found = False
         for line in lines:
             columns = line.split('\t')
             if len(columns) > 1:
                 player_id, full_name = columns[0], columns[1]
-                if full_name.lower().__contains__(player_name.lower()):
+                if direction == "N2ID" and full_name.lower().__contains__(query.lower()):
+                    found = True
                     if verbose:
                         THlog(f"Found player {full_name} with ID {player_id}", "info")
-
                     if return_mode == "list":
-                        player_ids.append(player_id)
+                        result.append(player_id)
                     elif return_mode == "dict":
-                        player_ids[full_name] = player_id
+                        result[full_name] = player_id
                     else:
                         return int(player_id)
-
-        if len(player_ids) == 0 and len(player_names) > 1 and not supress_warnings:
-            THlog(f"could not find a {player_name}, check for spelling mistakes.", "warning")
-    if len(player_ids) == 0:
-        THlog("No player IDs found.", "error")
-        return
-    return player_ids
-
-
-##opposite of GetPlayerID, gets the player name from the player's id
-def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warnings=False):
-    if return_mode not in ["dict", "list", "single"]:
-        THlog("return_mode must be either 'single', 'list' or 'dict'", "error")
-        return
-    if return_mode == "list":
-        player_names = []
-    elif return_mode == "dict":
-        player_names = {}
-    else:
-        player_names = []
-    if player_ids is None:
-        THlog("Please provide either a player name or a list of player names.", "error")
-        return
-
-    player_ids = [player_ids] if type(player_ids) is not list else player_ids
-
-    url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
-
-    response = requests.get(url)
-    response.raise_for_status()
-
-    lines = response.text.splitlines()
-
-
-    for id in player_ids:
-        for line in lines:
-            columns = line.split('\t')
-            if len(columns) > 1:
-                player_id, full_name = columns[0], columns[1]
-
-                if int(player_id) == int(id):
+                    break
+                elif direction == "ID2N" and int(player_id) == int(query):
+                    found = True
                     if verbose:
-                        THlog(f"Found player {full_name} with ID {player_id}")
-
+                        THlog(f"Found player {full_name} with ID {player_id}", "info")
                     if return_mode == "list":
-                        player_names.append(full_name)
+                        result.append(full_name)
                     elif return_mode == "dict":
-                        player_names[full_name] = player_id
+                        result[full_name] = player_id
                     else:
                         return full_name
+                    break
+        if not found and not supress_warnings:
+            THlog(f"Could not find a match for {query}, check for spelling mistakes.", "warning")
 
-        if len(player_names) == 0 and len(player_ids) > 1 and not supress_warnings:
-            THlog(f"could not find id {id}, check for spelling mistakes.", "warning")
-    if len(player_names) == 0:
-        THlog("No player names found.", "error")
+    if (isinstance(result, list) or isinstance(result, dict)) and not result:
+        THlog("No matches found.", "error")
         return
-    return player_names
 
+    return result
+
+# wrappers for compatibility
+def GetPlayerID(player_names, return_mode="single", verbose=False, supress_warnings=False):
+    return IDPlayer(player_names, return_mode=return_mode, direction="N2ID", verbose=verbose, supress_warnings=supress_warnings)
+
+def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warnings=False):
+    return IDPlayer(player_ids, return_mode=return_mode, direction="ID2N", verbose=verbose, supress_warnings=supress_warnings)
 
 # Ranks the players based on their points and returns a list of ranks in a list format. input must be a dictionary of player names and points
 def LocalRanker(PlayerPoints, verbose=False, supress_warnings=False):
@@ -242,7 +219,7 @@ def LocalRanker(PlayerPoints, verbose=False, supress_warnings=False):
     pointslst = []
     sortedPlayerPoints = dict(sorted(PlayerPoints.items(), key=lambda x: int(x[1]), reverse=True))
     if verbose:
-        print(f"playerpoints : {PlayerPoints}\nIs sorted to:  {sortedPlayerPoints}")
+        THlog(f"playerpoints : {PlayerPoints}\nIs sorted to:  {sortedPlayerPoints}", "info")
 
     for Playerpoints, pos in zip(sortedPlayerPoints.items(), range(len(PlayerPoints))):
         name = Playerpoints[0]
@@ -255,7 +232,7 @@ def LocalRanker(PlayerPoints, verbose=False, supress_warnings=False):
         return
     return result
 
-# filters the players id based on different criteria
+# filters the player ids based on different criteria
 def IDFilter(country="any", Team="any", ranking_start=1, ranking_end=None, return_mode="list", filter_mode="and", verbose=False, supress_warnings=True):
     if return_mode not in ["dict", "list"]:
         THlog("return_mode must be either 'list' or 'dict'", "error")
@@ -477,3 +454,166 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
         else:
             dict[date]=[point, rank]
     return dict
+
+def GetPlayerTournaments(player_ids=None, player_names=None, verbose=False, supress_warnings=False):
+    player_ids = ensure_list(player_ids)
+    player_names = ensure_list(player_names)
+
+    if len(player_ids) == 0 and len(player_names) == 0:
+        THlog("Please provide either a player ID or a player name.", "error")
+        return
+    # we only want the first player we find with that name, to make the lists equal length
+    tmpplayer_ids = []
+    for playerName in player_names:
+        tmpplayer_ids.append(IDPlayer(playerName, return_mode="single", direction="N2ID", supress_warnings=True))
+    
+    if verbose:
+        THlog(f"Found player ids {tmpplayer_ids}", "info")
+
+    player_names += IDPlayer(player_ids, return_mode="list", direction="ID2N", supress_warnings=False)
+    player_ids = (player_ids if isinstance(player_ids, list) else [player_ids])+tmpplayer_ids
+
+    if player_names[0] is None:
+        player_names.pop(0)
+    if player_ids[len(player_ids)-1] is None:
+        player_ids.pop(len(player_ids)-1)
+
+    if len(player_ids) != len(player_names):
+        THlog("Player names and IDs are not the same length, my code is bad. Please report this to me on github", "error")
+        return
+    tournament_info = []
+
+    for player_id in player_ids:
+        url = f"https://stiga.trefik.cz/ithf/ranking/player.aspx?id={player_id}"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "html.parser")
+        
+
+        # Find the main tournament table
+        main_table = soup.find("span", {"id": "LabTournaments"})
+        if not main_table:
+            THlog("Tournament data section not found.", "error")
+            return
+
+        # Parse each row from the tournament table
+        rows = main_table.find_all("tr")
+
+
+        player_tournament_info = []
+        for row in rows:
+            cells = row.find_all("td")
+            if len(cells) < 7:
+                continue
+
+            # Tournament name
+            name = cells[1].get_text(strip=True)
+            
+
+            # Placement (first number before '.')
+            place_text = cells[5].get_text(strip=True)
+            place_match = re.match(r"(\d+)", place_text)
+            placement = int(place_match.group(1)) if place_match else None
+            
+
+            # Points: extract both current and original if available
+            point_text = cells[6].get_text(strip=True)
+            point_match = re.match(r"(\d+)(?:\s*\((\d+)\))?", point_text)
+            if point_match:
+                current = int(point_match.group(1))
+                original = int(point_match.group(2)) if point_match.group(2) else current
+            else:
+                current = original = 0
+
+
+
+        
+            player_tournament_info.append([name, placement, original, current])
+        tournament_info.append(player_tournament_info)
+    return player_ids, player_names, tournament_info
+
+def CalculateTournament(playerIDs=[], Value=[], level=0, verbose=False, supress_warnings=False):
+    PlayersBeatenMethod = []
+    NumberOfPlayersBeatenMethod = []
+    ScalarMethod = []
+    LinearMethod = []
+    Result = [0 for _ in range(max(len(playerIDs), len(Value)))]
+    WinnerPointsList=[1000, 600,500,100,70,40,20]
+    coefList = [0.96,0.96, 0.92, 0.89, 0.83, 0.6, 0.4]
+
+    if playerIDs ==[] and Value ==[]:
+        THlog("Please provide a list of playerIDs or a list of best tournaments", "error")
+        return
+    # 3.1 Which players beaten-method
+
+    #find each player's best tournament if not provided
+    if Value ==[]:
+        
+        
+        Info = GetPlayerTournaments(player_ids=playerIDs)
+
+        for PlayerTournament in Info[2]:
+            playername = PlayerTournament[1]
+            if verbose:
+                THlog(f"Found tournaments for player {IDPlayer(playername, direction='ID2N')}", "info")
+            best = 0           
+            bestOrig = 0
+            for i in range(len(PlayerTournament)):
+                currPoints = PlayerTournament[i][3]
+                origpoints = PlayerTournament[i][2]
+                if currPoints > best:
+                    best = currPoints
+                if origpoints > bestOrig:
+                    bestOrig = origpoints
+            if best != bestOrig:
+                Value.append(bestOrig*0.8)
+            else:
+                Value.append(best)
+
+        Value.sort(reverse=True)
+    for i in range(len(Value)):
+        remaining = len(Value) - i
+        average_of_4 = 0
+        if remaining >= 4:
+            average_of_4 = sum(Value[i:i+4]) / 4
+        else:
+            average_of_4 = sum(Value[i:]) / remaining
+        
+        average_of_4*=coefList[level]
+        PlayersBeatenMethod.append(average_of_4)
+        
+
+    # 3.2 Number of Players Beaten Method
+    
+        PlayersBeaten = (len(Value)-1)-i
+        function = 1+(((min(70, len(Value))-1)*PlayersBeaten)/(len(Value)-1))
+        NumberOfPlayersBeatenMethod.append(function)
+
+    # 3.3 Scalar method
+        ScalarMethod.append(WinnerPointsList[level]/(2**i))
+
+    # 3.4 Linear method
+        #function = 1+((WinnerPointsList[level]-1)*(len(Value)-1-i)/len(Value)-1)
+        LinearMethod.append(1+(((WinnerPointsList[level]-1)*(len(Value)-i-1))/(len(Value)-1)))
+
+    ScalarMethod[len(ScalarMethod)-1]=1
+    print(f"NumberOfPlayersBeatenMethod: {NumberOfPlayersBeatenMethod}")
+    print(f"PlayersBeatenMethod: {PlayersBeatenMethod}")
+    print(f"ScalarMethod: {ScalarMethod}")
+    print(f"LinearMethod: {LinearMethod}")
+
+    # summarization
+    #take the maximum value from each postion
+
+    for i in range(len(NumberOfPlayersBeatenMethod)):
+        i -=1
+        if Result[i] < NumberOfPlayersBeatenMethod[i]:
+            Result[i] = NumberOfPlayersBeatenMethod[i]
+        if Result[i] < PlayersBeatenMethod[i]:
+            Result[i] = PlayersBeatenMethod[i]
+        if Result[i] < ScalarMethod[i]:
+            Result[i] = ScalarMethod[i]
+        if Result[i] < LinearMethod[i]:
+            Result[i] = LinearMethod[i]
+    # winner gets an extra 10 points
+    Result[0]+=10
+    return Result
