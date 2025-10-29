@@ -1,8 +1,16 @@
 import THTools as TH
 
-Info = TH.GetPlayerTournaments(player_names=["Nygard benjamin", "nygard sofie"])
-for i in range(len(Info[0])):
-    print(f"Tournament listings for player {TH.IDPlayer(Info[0][i], direction="ID2N")} ({Info[0][i]})")
-    for tournament in Info[2][i]:
-        print(f"\t{tournament[0]}: placed {tournament[1]}{"th" if tournament[1] > 1 else "st."}, {tournament[3]}({tournament[2]}) points")
+players = ["nygard benjamin", "nygard daniel"]
+Tournaments = TH.GetPlayerTournaments(player_names=players, verbose=True)
+for i in range(len(Tournaments[0])):
+    print(f"---------------- Tournament stats for player: {Tournaments[1][i].upper()}-----------")
+    print(f"""
+    Amount of Tournaments: {len(Tournaments[2][i])}
 
+""")
+    for tournament in Tournaments[2][i]:
+        if len(tournament[0]) > 20:
+            print(f"{tournament[0][:20]}:\t\t| position:{tournament[1]}\t\t | points:{tournament[2]}({tournament[3]}) \n{tournament[0][20:]}")
+        
+        else:
+            print(f"{tournament[0]}:\t\t| position:{tournament[1]}\t\t| points:{tournament[2]}({tournament[3]})")

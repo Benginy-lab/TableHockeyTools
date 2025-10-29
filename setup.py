@@ -20,9 +20,6 @@ setup(
     author='Benjamin Nygard',
     author_email='Benjamin.nygard13@gmail.com',
     url='https://github.com/Benginy-lab/TableHockeyTools.git',
-    package_data={
-        '': ['TableHockeyTools.1'],  # Add the man page file here
-    },
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Topic :: Software Development :: Libraries :: Python Modules',

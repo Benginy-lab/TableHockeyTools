@@ -4,7 +4,9 @@
 
 ## Features
 
-- **Data Gathering:** Easily gather data related to Table Hockey players, such as points and rank.
+- **Data Gathering:** Gather data related to Table Hockey players, such as points and rank.
+- **Tournament Calcualtions:** Calculate points values for positions in a tournament
+- **Tournament Predictions:** sort the players of a tournament in decreasing order from ranking.
 - **Examples Provided:** The `examples` folder demonstrates usage for various functions.
 
 ## Installation

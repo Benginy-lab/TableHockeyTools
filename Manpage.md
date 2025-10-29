@@ -6,7 +6,7 @@
 
 ## SYNOPSIS
 ```python
-from THTools import THlog, GetPlayerPoints, GetPlayerRank, GetPlayerID, GetPlayerName, IDfilter, LocalRanker,
+from THTools import IDPlayer, GetPlayerPoints, GetPlayerRank, LocalRanker, IDFilter GetHistory, GetPlayerTournaments, CalculateTournament
 ```
 
 ## DESCRIPTION
@@ -19,13 +19,6 @@ from THTools import THlog, GetPlayerPoints, GetPlayerRank, GetPlayerID, GetPlaye
 - `verbose` (bool): If `True`, logs additional information. _(default: False)_
 - `supress_warnings` (bool): If `True`, suppresses warning logs. _(default: False)_
 
-
-### THlog(message, mode="info")
-Logs messages with different color-coded modes.
-
-- **Parameters:**
-  - `message` (str): Message to log.
-  - `mode` (str): Logging mode, one of "info", "warning", or "error".
 
 ### GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", verbose=False, supress_warnings=False)
 Fetches ranking points for specified players.
@@ -43,22 +36,16 @@ Fetches open ranking postition for specified players.
 
 - **Returns:** List, dict, or single value of rank.
 
-### GetPlayerID(player_names, return_mode="single", verbose=False, supress_warnings=False)
+### IDPlayer(query_values, return_mode="single", direction="N2ID", verbose=False, supress_warnings=False):
 Fetches player ID(s) for given player name(s).
 Last name is required first, followed by first name. Given names are case-insensitive.
 
 - **Parameters:**
-  - `player_names` (str or list): Player name(s).
+  - `query_values` (list, str or int): input values in player names or ids. Could both be a list of values or a single one
   - `return_mode` (str): Output format, one of "list", "dict", or "single".
+  - `direction` (str): direction of search, inputs are "N2ID"(Name to ID) or "ID2N"(ID to Name)
 
-- **Returns:** List, dict, or single value of player ID(s).
-
-### GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warnings=False)
-Fetches player name(s) for given player ID(s).
-
-- **Parameters:** Same as **GetPlayerID**.
-
-- **Returns:** List, dict, or single value of player names.
+- **Returns:** List, dict, or single value of player ID(s) or Name(s).
 
 ### LocalRanker(PlayerPoints, verbose=False, supress_warnings=False)
 ranks the given players with given points.
@@ -95,22 +82,28 @@ Returns points and/or rank of a player at a set date, the date format is "YYYY-M
   - if `return_mode` is `"list"`, it will return a list of points, ranks or a list of a list of both. example [[points, rank], ]
   - if `return_mode` is `"dict"`, it will return a dict formatted `"YYYY-MM":points or rank` if `getattr` is set to `"both"`, this function will return a dict formatted `"YYYY-MM":[points, rank]`
 
+### 
+
 ## EXAMPLES
 
-1. **Log an informational message:**
-   ```python
-   THlog("Retrieving player points", "info")
-   ```
-
-2. **Get ranking points for a single player by ID:**
+1. **Get ranking points for a single player by ID:**
    ```python
    points = GetPlayerPoints(player_ids="12345", return_mode="single")
    ```
 
-3. **Get the player ID for a name:**
+2. **Get the player's name from their ID:**
    ```python
-   player_id = GetPlayerID("Doe John", return_mode="single")
+   player_id = IDplayer(123456, direction="ID2N" return_mode="single")
    ```
+3. **Rank two players**
+    ```python
+    PlayerPoints = {
+    "player1":32,
+    "player2":53
+    }
+    Ranking = LocalRanker(PlayerPoints)
+    ```
+
 
 ## DEPENDENCIES
 - `requests`
