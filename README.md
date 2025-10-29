@@ -45,7 +45,8 @@ for player_id, player_name in zip(player_ids, player_names):
 
 ```
 
-Check out the `examples` folder for more detailed usage.
+Check out the `examples` folder or the [Manpage](https://github.com/Benginy-lab/TableHockeyTools/blob/main/Manpage.md) for more detailed usage.
+
 
 ## Documentation
 
@@ -55,7 +56,6 @@ For full documentation of functions, see the [Manpage](https://github.com/Bengin
 
 ### Example Functions
 
-- **GetPlayerID(Name):** retrieves the ITHF player ID for a given player name.
 - **GetPlayerPoints(ID):** retrieves the points for a given player ID.
 - **GetPlayerRank(ID):** retrieves the rank for a given player ID.
 
