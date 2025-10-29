@@ -478,7 +478,7 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
             dict[date]=[point, rank]
     return dict
 
-def GetPlayerTournaments(player_ids=None, player_names=None, verbose=False, supress_warnings=False, use_selenium=False):
+def GetPlayerTournaments(player_ids=None, player_names=None, verbose=False, supress_warnings=False):
     player_ids = ensure_list(player_ids)
     player_names = ensure_list(player_names)
 
@@ -492,7 +492,7 @@ def GetPlayerTournaments(player_ids=None, player_names=None, verbose=False, supr
         if name == None:
             player_names.pop(0)
             continue
-        tmpid = IDPlayer(player_names, return_mode="single", verbose=verbose)
+        tmpid = IDPlayer(name, return_mode="single", verbose=verbose)
         tmpplayer_ids.append(tmpid)
 
         
