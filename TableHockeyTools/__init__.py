@@ -1,1 +1,1 @@
-from .THTools import *
+from .THTools import GetHistory, GetPlayerID, GetPlayerName ,GetPlayerPoints ,GetPlayerRank ,GetPlayerTournaments, IDPlayer, IDFilter, LocalRanker, CalculateTournament
