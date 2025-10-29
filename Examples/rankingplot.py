@@ -35,8 +35,6 @@ player2 = player(input("\nenter player 2: "))
 player1.getdata(yearago, now)
 player2.getdata(yearago, now)
 
-print(player1.data)
-
 
 plt.ylim(0, max(player1.max_y, player2.max_y)*1.1)
 
