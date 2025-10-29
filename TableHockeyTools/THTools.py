@@ -352,6 +352,7 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
     points = []
     ranks = []
     dates = []
+    invalid = []
 
     try:
         int(playerid)
@@ -413,20 +414,24 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
     response.raise_for_status()
 
     soup = BeautifulSoup(response.content, "html.parser")
-    for date in dates:
-        year_label = soup.find("td", class_="PlayerB", string=str(date.tm_year))
+    for i in range(len(dates)):
+        tmpdate = dates[i]
+        
+        year_label = soup.find("td", class_="PlayerB", string=str(tmpdate.tm_year))
         if not year_label:
-            THlog(f"Year {date.tm_year} not found in the data", "error")
-            return
+            THlog(f"Year {tmpdate.tm_year} not found in the data", "log")
+            invalid.append(i)
+            continue
+                
 
         year_row = year_label.find_parent("tr")
         month_table = year_row.find_next("table")
-        month_index = date.tm_mon - 1  # Month is 1-based in struct_time, so adjust by -1
+        month_index = tmpdate.tm_mon - 1  # Month is 1-based in struct_time, so adjust by -1
 
-        month_cells = month_table.find_all("td", class_=["Player", "Player1"])
+        month_cells = month_table.find_all("td", class_=["Player", "Player1", "Player2", "Player3", "Player4", "Player5"])
         if month_index >= len(month_cells):
-            THlog("Invalid month index or unexpected table format", "error")
-            return
+            THlog(f"Invalid month index or unexpected table format for month {month_index} in {tmpdate.tm_year}", "error")
+            continue
 
 
         month_cell = month_cells[month_index]
@@ -441,20 +446,28 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
                     return ranking_value
                 ranks.append(ranking_value)
                 if verbose:
-                    THlog(f"Found rank {ranking_value} for {time.strftime('%B %Y', date)}")
+                    THlog(f"Found rank {ranking_value} for {time.strftime('%B %Y', tmpdate)}")
         except:
             if not supress_warnings:
-                THlog(f"No valid ranking data found for {time.strftime('%B %Y', date)} skipping...", "warning")
+                THlog(f"No valid ranking data found for {time.strftime('%B %Y', tmpdate)} skipping...", "warning")
+            invalid.append(i)
+
         try:
             if points_value.isdigit():
                 if return_mode == "single":
                     return points_value
                 points.append(points_value)
                 if verbose:
-                    THlog(f"Found points {points_value} for {time.strftime('%B %Y', date)}")
+                    THlog(f"Found points {points_value} for {time.strftime('%B %Y', tmpdate)}")
         except:
             if not supress_warnings:
-                THlog(f"No valid points data found for {time.strftime('%B %Y', date)} skipping...", "warning")
+                THlog(f"No valid points data found for {time.strftime('%B %Y', tmpdate)} skipping...", "warning")
+            invalid.append(i)
+            
+        
+    
+    for idx in reversed(invalid):
+        dates.pop(idx)
 
     if return_mode == "list":
         if getattr == "points":
@@ -466,17 +479,17 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
             for rank,points in zip(ranks, points):
                 returnlst.append([points, rank])
             return returnlst
-    dict={}
+    result={}
     for date, rank, point in zip(dates, ranks, points):
         date = time.strftime("%Y-%m", date)
 
         if getattr == "points":
-            dict[date]= point
+            result[date]= point
         elif getattr == "rank":
-            dict[date]=rank
+            result[date]=rank
         else:
-            dict[date]=[point, rank]
-    return dict
+            result[date]=[point, rank]
+    return result
 
 def GetPlayerTournaments(player_ids=None, player_names=None, verbose=False, supress_warnings=False):
     player_ids = ensure_list(player_ids)
