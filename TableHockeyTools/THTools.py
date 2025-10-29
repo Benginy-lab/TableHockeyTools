@@ -198,7 +198,6 @@ def IDPlayer(query_values, return_mode="single", direction="N2ID", verbose=False
                         result[full_name] = player_id
                     else:
                         return int(player_id)
-                    break
                 elif direction == "ID2N" and int(player_id) == int(query):
                     found = True
                     if verbose:
@@ -209,7 +208,6 @@ def IDPlayer(query_values, return_mode="single", direction="N2ID", verbose=False
                         result[full_name] = player_id
                     else:
                         return full_name
-                    break
         if not found and not supress_warnings:
             THlog(f"Could not find a match for {query}, check for spelling mistakes.", "warning")
 
