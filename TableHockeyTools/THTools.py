@@ -10,15 +10,6 @@ from functools import lru_cache
 def ensure_list(x):
     return x if isinstance(x, list) else [x]
 
-# cashing the player id data to avoid excessive requests
-@lru_cache(maxsize=10)
-def GetPlayerList():
-    url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
-    response = requests.get(url)
-    response.raise_for_status()
-    return response.text.splitlines()
-
-
 #simple logging function
 def THlog(message, mode="info"):
     class TextColors:
@@ -34,8 +25,20 @@ def THlog(message, mode="info"):
     elif mode == "error":
         print(f"{TextColors.FAIL}ERROR:{message}{TextColors.ENDC}")
 
+
+# cashing the player id data to avoid excessive requests
+@lru_cache(maxsize=10)
+def GetPlayerList(verbose = False):
+    url = 'https://stiga.trefik.cz/ithf/ranking/playerID.txt'
+    THlog(f"fetching {url}")
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.text.splitlines()
+
+
+
 ## gets the ranking points for a player
-def GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", date=None, verbose=False, supress_warnings=False):
+def GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", verbose=False, supress_warnings=False):
     if return_mode not in ["list", "dict", "single"]:
         THlog("return_mode must be either 'single', 'list' or 'dict'", "error")
         return
@@ -48,19 +51,37 @@ def GetPlayerPoints(player_ids=None, player_names=None, return_mode="list", date
 
     if player_ids==None and player_names==None:
         THlog("Please provide either a player ID or a player name.", "error")
-
-    tmpplayer_ids = IDPlayer(player_names, return_mode="list", direction="N2ID") #gets player ids from player names
-    if verbose:
-        THlog(f"Found player ids {tmpplayer_ids}", "info")
-    player_names = ensure_list(player_names)
-    player_names += IDPlayer(player_ids, return_mode="list", direction="ID2N") #gets player names from player ids
+        return
     
-    player_ids = ensure_list(player_ids)+tmpplayer_ids
+    
+    
+    
+    player_names = ensure_list(player_names)
+    player_ids = ensure_list(player_ids)
+
+    #get names from ids and ids from names
+    tmpplayer_ids = IDPlayer(player_names, return_mode="list", direction="N2ID", supress_warnings=True)
+    tmpplayer_names = IDPlayer(player_ids, return_mode="list", direction="ID2N", supress_warnings=True) #gets player names from player ids
+
+    player_names += tmpplayer_names
+    player_ids += tmpplayer_ids
+
+    #clean up Nonetypes
+    if player_names[0] == None:
+        player_names.pop(0)
+    
+    if player_ids[0] == None:
+        player_ids.pop(0)
+    
+    
     if verbose:
         THlog(f"Found player names {player_names}", "info")
+        THlog(f"Found player ids {player_ids}", "info")
 
     for id, name in zip(player_ids, player_names):
         points_url = f'https://stiga.trefik.cz/ithf/ranking/player.aspx?id={id}'
+        if verbose:
+            THlog(f"fetching url {points_url} for {name}")
 
         response_points = requests.get(points_url)
         response_points.raise_for_status()
@@ -200,9 +221,11 @@ def IDPlayer(query_values, return_mode="single", direction="N2ID", verbose=False
 
 # wrappers for compatibility
 def GetPlayerID(player_names, return_mode="single", verbose=False, supress_warnings=False):
+    THlog("GetPlayerID is deprecated, it is recommended you use IDPlayer", )
     return IDPlayer(player_names, return_mode=return_mode, direction="N2ID", verbose=verbose, supress_warnings=supress_warnings)
 
 def GetPlayerName(player_ids, return_mode="single", verbose=False, supress_warnings=False):
+    THlog("GetPlayerName is deprecated, it is recommended you use IDPlayer")
     return IDPlayer(player_ids, return_mode=return_mode, direction="ID2N", verbose=verbose, supress_warnings=supress_warnings)
 
 # Ranks the players based on their points and returns a list of ranks in a list format. input must be a dictionary of player names and points
@@ -455,23 +478,37 @@ def GetHistory(playerid, date, date_end=None, getattr="points", return_mode="sin
             dict[date]=[point, rank]
     return dict
 
-def GetPlayerTournaments(player_ids=None, player_names=None, verbose=False, supress_warnings=False):
+def GetPlayerTournaments(player_ids=None, player_names=None, verbose=False, supress_warnings=False, use_selenium=False):
     player_ids = ensure_list(player_ids)
     player_names = ensure_list(player_names)
 
     if len(player_ids) == 0 and len(player_names) == 0:
         THlog("Please provide either a player ID or a player name.", "error")
         return
-    # we only want the first player we find with that name, to make the lists equal length
-    tmpplayer_ids = []
-    for playerName in player_names:
-        tmpplayer_ids.append(IDPlayer(playerName, return_mode="single", direction="N2ID", supress_warnings=True))
     
-    if verbose:
-        THlog(f"Found player ids {tmpplayer_ids}", "info")
+    # we only want the first player we find with that name, to make the lists equal length
+    tmpplayer_ids =[]
+    for name in player_names:
+        if name == None:
+            player_names.pop(0)
+            continue
+        tmpid = IDPlayer(player_names, return_mode="single", verbose=verbose)
+        tmpplayer_ids.append(tmpid)
 
-    player_names += IDPlayer(player_ids, return_mode="list", direction="ID2N", supress_warnings=False)
-    player_ids = (player_ids if isinstance(player_ids, list) else [player_ids])+tmpplayer_ids
+        
+    tmpplayer_names = IDPlayer(player_ids, return_mode="list", verbose=verbose, direction="ID2N", supress_warnings=True)
+    
+    # clean up nonetypes after ensurelist
+    if player_ids[0] == None:
+        player_ids.pop(0)
+
+    if verbose:
+        THlog(f"Found player ids {tmpplayer_ids} from list {player_names}", "info")
+        THlog(f"Found player names {tmpplayer_names} from list {player_ids}")
+
+
+    player_names += tmpplayer_names
+    player_ids += tmpplayer_ids
 
     if player_names[0] is None:
         player_names.pop(0)
@@ -485,6 +522,8 @@ def GetPlayerTournaments(player_ids=None, player_names=None, verbose=False, supr
 
     for player_id in player_ids:
         url = f"https://stiga.trefik.cz/ithf/ranking/player.aspx?id={player_id}"
+        if verbose:
+            THlog(f"Requesting url {url}")
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "html.parser")
         
@@ -497,6 +536,8 @@ def GetPlayerTournaments(player_ids=None, player_names=None, verbose=False, supr
 
         # Parse each row from the tournament table
         rows = main_table.find_all("tr")
+        if verbose:
+            THlog(f"tournaments found {len(rows)}")
 
 
         player_tournament_info = []
